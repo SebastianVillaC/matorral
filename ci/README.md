@@ -1,9 +1,9 @@
 # CI-CD de la aplicación (Actividad 6 — Opción A)
 
-Dos pipelines de AWS CodePipeline (módulo `cicd` de `actividad6/aws`):
+CI y CD en AWS (módulo `cicd` de `actividad6/aws`):
 
-- **`matorral-pr` (CI):** al abrir o actualizar un PR hacia `main` → `buildspec-pr.yml`: construye y valida, **sin desplegar**.
-- **`matorral-app` (CI-CD):** con cada **push / merge a `main`** → etapas de la tabla.
+- **`matorral-pr` (CI, CodeBuild + webhook):** al abrir o actualizar un PR hacia `main` → `buildspec-pr.yml`: construye y valida, **sin desplegar**, y publica el resultado como *check* en el PR.
+- **`matorral-app` (CI-CD, CodePipeline):** con cada **push / merge a `main`** → etapas de la tabla.
 
 | Etapa | Servicio | Archivo | Qué hace |
 |---|---|---|---|
@@ -22,4 +22,4 @@ aws ecs update-service --cluster matorral-cluster --service matorral-worker --ta
 
 > Disparador automático: cada push/merge a `main` inicia el pipeline (trigger WebhookV2 de CodePipeline).
 
-> Cada pull request hacia `main` se valida en `matorral-pr` (build + check) antes de permitir el merge.
+> La regla de protección de `main` exige que el check de `matorral-pr` pase: si falla, GitHub no permite el merge.
