@@ -473,6 +473,3 @@ COMMENTS_XTD_SALT = env("COMMENTS_XTD_SALT", default="change-me-in-production")
 
 DELETE_ATTACHMENTS_FROM_DISK = True
 FILE_UPLOAD_MAX_SIZE = 52_428_800  # 50 MB
-
-# Prueba Actividad 6: error de sintaxis intencional para que falle el pipeline
-PRUEBA_PIPELINE_FALLIDO = (
