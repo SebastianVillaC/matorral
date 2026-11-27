@@ -21,3 +21,5 @@ aws ecs update-service --cluster matorral-cluster --service matorral-worker --ta
 ```
 
 > Disparador automático: cada push/merge a `main` inicia el pipeline (trigger WebhookV2 de CodePipeline).
+
+> Cada pull request hacia `main` se valida en `matorral-pr` (build + check) antes de permitir el merge.
