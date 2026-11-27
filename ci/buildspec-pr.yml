@@ -1,0 +1,27 @@
+# Pipeline de PULL REQUEST (CodeBuild): integración continua sin despliegue.
+# Se dispara al abrir o actualizar un PR hacia main. Construye la imagen y valida Django,
+# pero NO publica en ECR ni despliega: eso solo ocurre al hacer merge (buildspec-build.yml).
+version: 0.2
+
+env:
+  variables:
+    DOCKER_BUILDKIT: "1"
+
+phases:
+  pre_build:
+    commands:
+      - echo "Validando el PR (commit $CODEBUILD_RESOLVED_SOURCE_VERSION)"
+      # Imágenes base desde el mirror de ECR Public (evita el rate-limit de Docker Hub)
+      - sed -i -E 's#^FROM (python|node):#FROM public.ecr.aws/docker/library/\1:#' docker/django/Dockerfile
+  build:
+    commands:
+      - docker build -f docker/django/Dockerfile -t matorral-pr:validacion .
+      - docker run --rm -e DEBUG=False -e SECRET_KEY=ci-only matorral-pr:validacion python manage.py check
+  post_build:
+    commands:
+      - |
+        if [ "$CODEBUILD_BUILD_SUCCEEDING" = "1" ]; then
+          echo "PR VALIDO: la imagen construye y Django pasa el check (sin push ni deploy)"
+        else
+          echo "PR CON ERRORES: corregir antes de hacer merge a main"
+        fi

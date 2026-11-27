@@ -1,7 +1,9 @@
 # CI-CD de la aplicación (Actividad 6 — Opción A)
 
-Pipeline AWS CodePipeline `matorral-app` (definido en `actividad6/aws/cicd.tf`) que se dispara con cada
-**push / merge de PR a `main`** de este fork.
+Dos pipelines de AWS CodePipeline (módulo `cicd` de `actividad6/aws`):
+
+- **`matorral-pr` (CI):** al abrir o actualizar un PR hacia `main` → `buildspec-pr.yml`: construye y valida, **sin desplegar**.
+- **`matorral-app` (CI-CD):** con cada **push / merge a `main`** → etapas de la tabla.
 
 | Etapa | Servicio | Archivo | Qué hace |
 |---|---|---|---|
