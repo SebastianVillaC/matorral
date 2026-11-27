@@ -17,3 +17,5 @@ aws ecs list-task-definitions --family-prefix matorral-web --sort DESC
 aws ecs update-service --cluster matorral-cluster --service matorral-web    --task-definition matorral-web:<REV>
 aws ecs update-service --cluster matorral-cluster --service matorral-worker --task-definition matorral-worker:<REV>
 ```
+
+> Disparador automático: cada push/merge a `main` inicia el pipeline (trigger WebhookV2 de CodePipeline).
