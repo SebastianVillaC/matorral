@@ -1,0 +1,21 @@
+# Etapa SMOKE TEST del pipeline (CodeBuild).
+# Verifica que la app desplegada responde: /health/ valida BD (RDS), caché (Valkey) y Celery.
+#
+# Variables inyectadas por Terraform: APP_URL (http://<dns-del-alb>)
+version: 0.2
+
+phases:
+  build:
+    commands:
+      - |
+        for i in $(seq 1 20); do
+          CODE=$(curl -s -o /dev/null -w '%{http_code}' "$APP_URL/health/?format=json" || true)
+          echo "Intento $i: /health/ -> $CODE"
+          if [ "$CODE" = "200" ]; then
+            curl -s "$APP_URL/health/?format=json"; echo
+            curl -sf -o /dev/null "$APP_URL/accounts/login/" && echo "Login OK"
+            exit 0
+          fi
+          sleep 15
+        done
+        echo "Smoke test FALLÓ"; exit 1

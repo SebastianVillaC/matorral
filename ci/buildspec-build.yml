@@ -1,0 +1,39 @@
+# Etapa BUILD del pipeline (CodeBuild).
+# Construye la imagen de producción de Matorral desde el código fuente (ya no desde Docker Hub),
+# la publica en ECR con el SHA del commit y genera los imagedefinitions para el deploy en ECS.
+#
+# Variables inyectadas por Terraform (modules/cicd): ECR_REPO_URL, AWS_DEFAULT_REGION
+version: 0.2
+
+env:
+  variables:
+    DOCKER_BUILDKIT: "1"
+
+phases:
+  pre_build:
+    commands:
+      - echo "Login en ECR"
+      - aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin "${ECR_REPO_URL%%/*}"
+      - IMAGE_TAG=$(echo "$CODEBUILD_RESOLVED_SOURCE_VERSION" | cut -c1-7)
+      - echo "Tag de la imagen = $IMAGE_TAG"
+      # Las imágenes base se toman del mirror de ECR Public para evitar el rate-limit de Docker Hub en CodeBuild
+      - sed -i -E 's#^FROM (python|node):#FROM public.ecr.aws/docker/library/\1:#' docker/django/Dockerfile
+  build:
+    commands:
+      - docker build -f docker/django/Dockerfile -t "$ECR_REPO_URL:$IMAGE_TAG" -t "$ECR_REPO_URL:latest" .
+      # Prueba rápida: Django arranca y la configuración es válida dentro de la imagen
+      - docker run --rm -e DEBUG=False -e SECRET_KEY=ci-only "$ECR_REPO_URL:$IMAGE_TAG" python manage.py check
+  post_build:
+    commands:
+      - docker push "$ECR_REPO_URL:$IMAGE_TAG"
+      - docker push "$ECR_REPO_URL:latest"
+      - printf '[{"name":"web","imageUri":"%s"}]' "$ECR_REPO_URL:$IMAGE_TAG" > imagedefinitions-web.json
+      - printf '[{"name":"worker","imageUri":"%s"}]' "$ECR_REPO_URL:$IMAGE_TAG" > imagedefinitions-worker.json
+      - printf '%s' "$ECR_REPO_URL:$IMAGE_TAG" > image-uri.txt
+      - cat imagedefinitions-web.json
+
+artifacts:
+  files:
+    - imagedefinitions-web.json
+    - imagedefinitions-worker.json
+    - image-uri.txt
